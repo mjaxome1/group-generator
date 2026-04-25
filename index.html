@@ -110,33 +110,28 @@ Carlos"></textarea><br>
 
     function downloadCSV() {
       let groups = document.querySelectorAll(".group");
-
+    
       if (groups.length === 0) {
         alert("Please generate groups first!");
         return;
       }
-
-      let rows = [["Group", "Students"]];
-
+    
+      let csv = "Group,Students\n";
+    
       groups.forEach((group, index) => {
         let text = group.innerText.replace(`Group ${index + 1}: `, "");
-        rows.push([`Group ${index + 1}`, text]);
+        csv += `Group ${index + 1},"${text}"\n`;
       });
-
-      let csvContent = rows.map(e => e.join(",")).join("\n");
-
-      let blob = new Blob([csvContent], { type: "text/csv" });
-      let url = window.URL.createObjectURL(blob);
-
-      let a = document.createElement("a");
-      a.href = url;
-      a.download = "groups.csv";
-
-      document.body.appendChild(a);
-      a.click();
-
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+    
+      // Create a hidden download link (more compatible)
+      let link = document.createElement("a");
+      link.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+      link.download = "groups.csv";
+    
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+}
     }
   </script>
 
