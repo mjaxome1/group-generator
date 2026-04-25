@@ -2,6 +2,9 @@
 <html>
 <head>
   <title>Group Generator</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -32,24 +35,23 @@
       padding: 8px;
       border-radius: 8px;
       border: none;
-      width: 80px;
+      width: 90px;
       text-align: center;
       margin-top: 5px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
 
     button {
-      padding: 12px 25px;
-      margin-top: 15px;
+      padding: 12px 18px;
+      margin: 5px;
       border: none;
       border-radius: 20px;
       background-color: #219ebc;
       color: white;
-      font-size: 16px;
+      font-size: 14px;
       cursor: pointer;
       transition: 0.3s;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      margin-right: 10px;
     }
 
     button:hover {
@@ -66,73 +68,127 @@
       min-width: 200px;
       box-shadow: 0 3px 8px rgba(0,0,0,0.1);
     }
+
+    #preview {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .controls {
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 
 <body>
 
   <h2>💙 Students Group Generator</h2>
-  <p>Enter names (one per line):</p>
 
-  <textarea id="names" placeholder="Example:
+  <!-- 🔝 BUTTONS MOVED HERE -->
+  <div class="controls">
+    <button onclick="generateGroups()">Generate Groups ✨</button>
+    <button onclick="undoGroups()">Undo ↩️</button>
+    <button onclick="downloadCSV()">Download CSV 📥</button>
+    <button onclick="downloadPDF()">Export PDF 📄</button>
+    <button onclick="clearAll()">Clear 🧹</button>
+  </div>
+
+  <p>Enter names (one per line):</p>
+  <textarea id="names" oninput="updatePreview()" placeholder="Example:
 Alice
 Bob
 Carlos"></textarea><br>
 
   <p>Group size:</p>
-  <input type="number" id="groupSize" value="2"><br>
+  <input type="number" id="groupSize" value="2" oninput="updatePreview()">
 
-  <button onclick="generateGroups()">Generate Groups ✨</button>
-  <button onclick="downloadCSV()">Download CSV 📥</button>
-  <button onclick="clearAll()">Clear 🧹</button>
+  <div id="preview"></div>
 
   <div id="output"></div>
 
   <script>
     let generatedGroups = [];
+    let history = [];
+
+    function getNames() {
+      return document.getElementById("names").value
+        .split("\n")
+        .map(n => n.trim())
+        .filter(n => n !== "");
+    }
+
+    function updatePreview() {
+      let names = getNames();
+      let size = parseInt(document.getElementById("groupSize").value);
+
+      if (!size || size < 1 || names.length === 0) {
+        document.getElementById("preview").innerText = "";
+        return;
+      }
+
+      let full = Math.floor(names.length / size);
+      let remainder = names.length % size;
+
+      document.getElementById("preview").innerText =
+        `👩‍🎓 ${names.length} students → ${full} groups of ${size}` +
+        (remainder ? ` + 1 group of ${remainder}` : "");
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
 
     function generateGroups() {
-      let names = document.getElementById("names").value
-        .split("\n")
-        .map(name => name.trim())
-        .filter(name => name !== "");
-
+      let names = getNames();
       let groupSize = parseInt(document.getElementById("groupSize").value);
 
-      if (!groupSize || groupSize < 1) {
-        alert("Please enter a valid group size");
+      if (!groupSize || groupSize < 1 || names.length === 0) {
+        alert("Please enter valid data");
         return;
       }
 
-      if (names.length === 0) {
-        alert("Please enter at least one name");
-        return;
-      }
+      history.push(JSON.stringify(generatedGroups));
 
-      if (groupSize > names.length) {
-        alert("Group size is larger than number of students");
-        return;
-      }
-
-      // Shuffle (Fisher-Yates)
-      for (let i = names.length - 1; i > 0; i--) {
-        let j = Math.floor(Math.random() * (i + 1));
-        [names[i], names[j]] = [names[j], names[i]];
-      }
+      shuffle(names);
 
       generatedGroups = [];
       let output = document.getElementById("output");
       output.innerHTML = "";
 
       for (let i = 0; i < names.length; i += groupSize) {
-        let group = names.slice(i, i + groupSize);
-        generatedGroups.push(group);
+        generatedGroups.push(names.slice(i, i + groupSize));
+      }
 
+      generatedGroups.forEach((group) => {
         output.innerHTML += `
           <div class="group">
-            Group ${generatedGroups.length}: ${group.join(", ")}
-          </div>`;
+            ${group.join(", ")}
+          </div>
+        `;
+      });
+    }
+
+    function undoGroups() {
+      if (history.length === 0) {
+        alert("Nothing to undo");
+        return;
       }
+
+      generatedGroups = JSON.parse(history.pop());
+
+      let output = document.getElementById("output");
+      output.innerHTML = "";
+
+      generatedGroups.forEach((group) => {
+        output.innerHTML += `
+          <div class="group">
+            ${group.join(", ")}
+          </div>
+        `;
+      });
     }
 
     function downloadCSV() {
@@ -143,13 +199,13 @@ Carlos"></textarea><br>
 
       let rows = [["Group", "Students"]];
 
-      generatedGroups.forEach((group, index) => {
-        rows.push([`Group ${index + 1}`, group.join(", ")]);
+      generatedGroups.forEach((group, i) => {
+        rows.push([`Group ${i + 1}`, group.join(", ")]);
       });
 
-      let csvContent = rows.map(r => r.join(",")).join("\n");
+      let csv = rows.map(r => r.join(",")).join("\n");
 
-      let blob = new Blob([csvContent], { type: "text/csv" });
+      let blob = new Blob([csv], { type: "text/csv" });
       let url = window.URL.createObjectURL(blob);
 
       let a = document.createElement("a");
@@ -160,11 +216,32 @@ Carlos"></textarea><br>
       window.URL.revokeObjectURL(url);
     }
 
+    function downloadPDF() {
+      if (generatedGroups.length === 0) {
+        alert("Generate groups first");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      let y = 10;
+
+      generatedGroups.forEach((group, i) => {
+        doc.text(`Group ${i + 1}: ${group.join(", ")}`, 10, y);
+        y += 10;
+      });
+
+      doc.save("groups.pdf");
+    }
+
     function clearAll() {
       document.getElementById("names").value = "";
       document.getElementById("groupSize").value = 2;
       document.getElementById("output").innerHTML = "";
+      document.getElementById("preview").innerText = "";
       generatedGroups = [];
+      history = [];
     }
   </script>
 
