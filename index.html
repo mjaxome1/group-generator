@@ -120,7 +120,7 @@ Carlos"></textarea><br>
     
       groups.forEach((group, index) => {
         let text = group.innerText.replace(`Group ${index + 1}: `, "");
-        csv += `Group ${index + 1},"${text}"\n`;
+        csv += `Group ${index},"${text}"\n`;
       });
     
       // Create a hidden download link (more compatible)
