@@ -25,6 +25,7 @@
       padding: 10px;
       font-size: 14px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      line-height: 1.4;
     }
 
     input {
@@ -83,55 +84,87 @@ Carlos"></textarea><br>
 
   <button onclick="generateGroups()">Generate Groups ✨</button>
   <button onclick="downloadCSV()">Download CSV 📥</button>
+  <button onclick="clearAll()">Clear 🧹</button>
 
   <div id="output"></div>
 
   <script>
+    let generatedGroups = [];
+
     function generateGroups() {
       let names = document.getElementById("names").value
         .split("\n")
-        .filter(name => name.trim() !== "");
+        .map(name => name.trim())
+        .filter(name => name !== "");
 
       let groupSize = parseInt(document.getElementById("groupSize").value);
 
+      if (!groupSize || groupSize < 1) {
+        alert("Please enter a valid group size");
+        return;
+      }
+
+      if (names.length === 0) {
+        alert("Please enter at least one name");
+        return;
+      }
+
+      if (groupSize > names.length) {
+        alert("Group size is larger than number of students");
+        return;
+      }
+
+      // Shuffle (Fisher-Yates)
       for (let i = names.length - 1; i > 0; i--) {
         let j = Math.floor(Math.random() * (i + 1));
         [names[i], names[j]] = [names[j], names[i]];
       }
 
+      generatedGroups = [];
       let output = document.getElementById("output");
       output.innerHTML = "";
 
       for (let i = 0; i < names.length; i += groupSize) {
         let group = names.slice(i, i + groupSize);
-        output.innerHTML += `<div class="group">Group ${i/groupSize + 1}: ${group.join(", ")}</div>`;
+        generatedGroups.push(group);
+
+        output.innerHTML += `
+          <div class="group">
+            Group ${generatedGroups.length}: ${group.join(", ")}
+          </div>`;
       }
     }
 
     function downloadCSV() {
-      let groups = document.querySelectorAll(".group");
-    
-      if (groups.length === 0) {
+      if (generatedGroups.length === 0) {
         alert("Please generate groups first!");
         return;
       }
-    
-      let csv = "Group,Students\n";
-    
-      groups.forEach((group, index) => {
-        let text = group.innerText.replace(`Group ${index + 1}: `, "");
-        csv += `Group ${index + 1},"${text}"\n`;
+
+      let rows = [["Group", "Students"]];
+
+      generatedGroups.forEach((group, index) => {
+        rows.push([`Group ${index + 1}`, group.join(", ")]);
       });
-    
-      // Create a hidden download link (more compatible)
-      let link = document.createElement("a");
-      link.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-      link.download = "groups.csv";
-    
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-}
+
+      let csvContent = rows.map(r => r.join(",")).join("\n");
+
+      let blob = new Blob([csvContent], { type: "text/csv" });
+      let url = window.URL.createObjectURL(blob);
+
+      let a = document.createElement("a");
+      a.href = url;
+      a.download = "groups.csv";
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    }
+
+    function clearAll() {
+      document.getElementById("names").value = "";
+      document.getElementById("groupSize").value = 2;
+      document.getElementById("output").innerHTML = "";
+      generatedGroups = [];
     }
   </script>
 
