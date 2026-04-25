@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Group Generator</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 30px;
+      background: linear-gradient(to bottom right, #dff6ff, #bde0fe);
+      color: #023047;
+    }
+
+    h2 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    textarea {
+      width: 80%;
+      height: 120px;
+      margin: 10px;
+      border-radius: 10px;
+      border: none;
+      padding: 10px;
+      font-size: 14px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    input {
+      padding: 8px;
+      border-radius: 8px;
+      border: none;
+      width: 80px;
+      text-align: center;
+      margin-top: 5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    button {
+      padding: 12px 25px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 20px;
+      background-color: #219ebc;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    button:hover {
+      background-color: #126782;
+      transform: scale(1.05);
+    }
+
+    .group {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 12px;
+      background-color: white;
+      display: inline-block;
+      min-width: 200px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>💙 Student Group Generator</h2>
+  <p>Enter names (one per line):</p>
+
+  <textarea id="names" placeholder="Example:
+Alice
+Bob
+Carlos"></textarea><br>
+
+  <p>Group size:</p>
+  <input type="number" id="groupSize" value="2"><br>
+
+  <button onclick="generateGroups()">Generate Groups ✨</button>
+
+  <div id="output"></div>
+
+  <script>
+    function generateGroups() {
+      let names = document.getElementById("names").value
+        .split("\n")
+        .filter(name => name.trim() !== "");
+
+      let groupSize = parseInt(document.getElementById("groupSize").value);
+
+      for (let i = names.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        [names[i], names[j]] = [names[j], names[i]];
+      }
+
+      let output = document.getElementById("output");
+      output.innerHTML = "";
+
+      for (let i = 0; i < names.length; i += groupSize) {
+        let group = names.slice(i, i + groupSize);
+        output.innerHTML += `<div class="group">Group ${i/groupSize + 1}: ${group.join(", ")}</div>`;
+      }
+    }
+  </script>
+
+</body>
+</html>
